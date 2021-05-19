@@ -9,16 +9,20 @@ app.get('/', function (req, res) {
 });
 
 var onlineUsers = [];
+var groups = [];
 
-var userList = function(){
+var userList = function () {
   var resp = [];
 
   onlineUsers.forEach((usr) => {
-    resp.push(usr.username);
+    resp.push({ 'name': usr.username, 'type': 'user' });
   });
 
-  resp.push("everyone");
+  groups.forEach((grp) => {
+    resp.push({ 'name': grp.name, 'type': 'group' });
+  });
 
+  resp.push({ 'name': 'everyone', 'type': 'broadcast' });
   return resp;
 }
 
@@ -55,18 +59,42 @@ io.on('connection', function (socket) {
       });
 
       onlineUsers = newOnlineUsers;
+
+      groups.forEach((grp, index) => {
+        if (grp.name == obj.to) {
+          try {
+
+            var targets = onlineUsers.filter(usr => grp.users.includes(usr.username));
+
+            targets.forEach((usr) => {
+              usr.socket.emit('message', obj);
+            });
+
+          } catch {
+            console.log(['error', index, obj, grp]);
+          }
+        }
+      });
+
     }
 
     console.log(obj);
+
+
+
   });
 
+
+
   socket.on('command', function (obj) {
-
-
     if (obj.message == "writeUser") {
       onlineUsers.push({ 'username': obj.user, socket: socket });
       socket.broadcast.emit('command', { 'resp': userList(), 'type': 'userlist' });
       socket.emit('command', { 'resp': userList(), 'type': 'userlist' });
+    }
+
+    if (obj.message == "createGroup") {
+      groups.push(obj.group);
     }
 
     if (obj.message == "getUsers") {
@@ -78,8 +106,6 @@ io.on('connection', function (socket) {
     //socket.broadcast.emit('message', (obj));
     console.log(obj);
   });
-
-
 });
 
 app.use(express.static('public'));
