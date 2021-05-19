@@ -1,8 +1,8 @@
 
 let joinerName;
-let textArea = document.querySelector('#textarea')
-let messageArea = document.querySelector('.message_area')
-
+let textArea = document.querySelector('#textarea');
+let messageArea = document.querySelector('#messageArea');
+let to = 'everyone';
 
 const socket = io("http://localhost:3000");
 
@@ -18,7 +18,7 @@ textArea.addEventListener('keyup', (e) => {
 })
 
 
-function sentMessage(message, to = "everyone") {
+function sentMessage(message) {
 
     let msg = {
         user: joinerName,
@@ -35,7 +35,7 @@ function sentMessage(message, to = "everyone") {
 
 }
 
-var sendUserInfo = function(){
+var sendUserInfo = function () {
     socket.emit('command', {
         user: joinerName,
         message: "writeUser"
@@ -69,8 +69,31 @@ socket.on('message', (msg) => {
     scrollToBottom();
 });
 
+var selectTo = function (usr) {
+    to = usr;
+    $(".list-group-item").removeClass("active");
+}
+
 socket.on('command', (msg) => {
 
+    if (msg.type == "userlist") {
+        var userArea = $('#userArea');
+        userArea.html("");
+        msg.resp.forEach(usr => {
+            if (usr != joinerName) {
+                //<li class="list-group-item list-group-item-action" aria-current="true">An active item</li>
+
+                var elementLi = $('<li class="list-group-item list-group-item-action" aria-current="true">An active item</li>');
+                elementLi.click(function (e) {
+                    e.preventDefault();
+                    selectTo(usr);
+                    setTimeout(() => { elementLi.addClass("active"); }, 100);
+                });
+                elementLi.html(usr);
+                userArea.append(elementLi);
+            };
+        });
+    }
     console.log(msg);
 
 });

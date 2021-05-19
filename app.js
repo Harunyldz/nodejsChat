@@ -10,40 +10,71 @@ app.get('/', function (req, res) {
 
 var onlineUsers = [];
 
+var userList = function(){
+  var resp = [];
+
+  onlineUsers.forEach((usr) => {
+    resp.push(usr.username);
+  });
+
+  resp.push("everyone");
+
+  return resp;
+}
+
 io.on('connection', function (socket) {
   //console.log(['user connected', socket]);
+  socket.on('disconnect', function () {
+    //console.log(['disconnected', socket]);
+  });
 
-  
 
   socket.on('message', function (obj) {
     // io.emit('message', obj);
-    
-    socket.broadcast.emit('message', (obj));
+
+    if (obj.to == "everyone") {
+      socket.broadcast.emit('message', (obj));
+
+    } else {
+      var errors = [];
+      onlineUsers.forEach((usr, index) => {
+        if (usr.username == obj.to) {
+          try {
+            usr.socket.emit('message', obj);
+          } catch {
+            errors.push(index);
+          }
+        }
+      });
+
+
+      var newOnlineUsers = [];
+      onlineUsers.forEach((usr, index) => {
+        if (!errors.includes(index))
+          newOnlineUsers.push(usr);
+      });
+
+      onlineUsers = newOnlineUsers;
+    }
+
     console.log(obj);
-    console.log(obj.username + ':' + obj.content);
   });
 
   socket.on('command', function (obj) {
 
 
-    if(obj.message == "writeUser"){
-      onlineUsers.push({'username': obj.user, socket: socket});
+    if (obj.message == "writeUser") {
+      onlineUsers.push({ 'username': obj.user, socket: socket });
+      socket.broadcast.emit('command', { 'resp': userList(), 'type': 'userlist' });
+      socket.emit('command', { 'resp': userList(), 'type': 'userlist' });
     }
 
-    if(obj.message == "getUsers"){
-      var resp = [];
-
-      onlineUsers.forEach((usr)=>{
-          resp.push(usr.username);
-      });
-
-
-      socket.emit('command', resp );
-
+    if (obj.message == "getUsers") {
+      socket.emit('command', { 'resp': userList(), 'type': 'userlist' });
     }
 
     // io.emit('message', obj);
-    
+
     //socket.broadcast.emit('message', (obj));
     console.log(obj);
   });
