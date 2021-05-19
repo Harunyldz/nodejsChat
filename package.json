@@ -1,0 +1,17 @@
+{
+  "name": "projeklasoru",
+  "version": "1.0.0",
+  "description": "odev",
+  "main": "app.js",
+  "scripts": {
+    "serve": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "harun yildiz",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongodb": "^3.6.7",
+    "socket.io": "^4.1.2"
+  }
+}
